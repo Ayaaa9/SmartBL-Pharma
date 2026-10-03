@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { margin: 0; background: #eef2f7; font-family: Calibri, sans-serif; }
+    .page { width: 1057px; min-height: 1615px; margin: 26px auto; background: #fff; border: 2px solid #8392a8; box-shadow: 0 12px 22px rgba(28, 44, 76, 0.12); box-sizing: border-box; overflow: hidden; }
+    .band { background: linear-gradient(90deg, #2d4a7c, #6f8fb9); color: #fff; padding: 18px 22px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; }
+    .band h1 { margin: 0; font-size: 31px; letter-spacing: 0.8px; }
+    .band .supplier { text-align: right; font-size: 12px; line-height: 1.4; }
+    .meta { padding: 12px 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; border-bottom: 1px solid #8392a8; font-size: 12px; }
+    .meta .cell { border: 1px solid #8392a8; padding: 7px; min-height: 34px; }
+    .content { padding: 12px 12px 14px 12px; }
+    .table-wrap { overflow: hidden; }
+    .doc-table { width: 100%; border-collapse: collapse; font-size: 12px; background: #ffffff; }
+    .doc-table th, .doc-table td { border: 1px solid #8392a8; padding: 5px 6px; }
+    .doc-table th { background: #dce5f4; text-transform: uppercase; font-size: 11px; }
+    .doc-table tbody tr:nth-child(odd) td { background: #f7faff; }
+    .merged-row td { background: #f0f5fb; }
+    .c { text-align: center; }
+    .r { text-align: right; }
+    .footer-grid { margin-top: 12px; display: grid; grid-template-columns: 1fr 320px; gap: 10px; }
+    .notes { border: 1px dashed #8392a8; background: #f0f5fb; padding: 10px; font-size: 12px; line-height: 1.35; }
+    .totals { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .totals td { border: 1px solid #8392a8; padding: 7px; }
+    .stamp { position: absolute; right: 46px; top: 145px; width: 100px; height: 100px; border: 2px solid rgba(160, 30, 30, 0.35); border-radius: 50%; color: rgba(160, 30, 30, 0.45); display: {% if show_stamp %}flex{% else %}none{% endif %}; align-items: center; justify-content: center; transform: rotate(-16deg); font-weight: 700; }
+    .signature { display: {% if show_signature %}block{% else %}none{% endif %}; text-align: right; font-style: italic; font-size: 20px; color: #2d4a7c; transform: rotate(-6deg); margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="page" data-template="danone-nutricia">
+    <div class="stamp">RECU</div>
+    <div class="band">
+      <div>
+        <h1>{{ supplier_profile.title }}</h1>
+        <div><strong>BL:</strong> {{ bl_number }}</div>
+        <div><strong>Layout:</strong> Ledger</div>
+      </div>
+      <div class="supplier">
+        <div><strong>{{ supplier.name }}</strong></div>
+        <div>{{ supplier.address }}</div>
+        <div>{{ supplier.phone }}</div>
+        <div>{{ supplier.city }}</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="cell"><strong>Date</strong><br>{{ issue_date }}</div>
+      <div class="cell"><strong>Client</strong><br>{{ client_name }}</div>
+      <div class="cell"><strong>Code</strong><br>{{ client_code }}</div>
+      <div class="cell"><strong>Adresse</strong><br>{{ client_address }}</div>
+    </div>
+    <div class="content">
+
+    <table class="doc-table">
+      <thead>
+        <tr>
+          {% for column in supplier_profile.column_order %}
+            <th>{{ column }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in products %}
+        {% if row.is_merged_row %}
+          <tr class="merged-row">
+            <td colspan="{{ supplier_profile.column_order|length }}"><strong>{{ row.designation }}</strong></td>
+          </tr>
+        {% else %}
+          <tr style="transform: translateX({{ row.offset_px }}px)">
+            {% for column in supplier_profile.column_order %}
+              {% if column == 'designation' %}<td>{{ row.designation }}</td>{% endif %}
+              {% if column == 'code' %}<td class="c">{{ row.code_produit if row.code_produit is not none else '' }}</td>{% endif %}
+              {% if column == 'qty' %}<td class="c">{{ row.qty if row.qty is not none else '' }}</td>{% endif %}
+              {% if column == 'unit_price' %}<td class="r">{{ "%.2f"|format(row.unit_price) if row.unit_price is not none else '' }}</td>{% endif %}
+              {% if column == 'pph' %}<td class="r">{{ "%.2f"|format(row.pph) if row.pph is not none else '' }}</td>{% endif %}
+              {% if column == 'tva' %}<td class="c">{{ (row.tva * 100)|int if row.tva is not none else '' }}%</td>{% endif %}
+              {% if column == 'lot' %}<td class="c">{{ row.lot if row.lot is not none else '' }}</td>{% endif %}
+              {% if column == 'peremption' %}<td class="c">{{ row.peremption if row.peremption is not none else '' }}</td>{% endif %}
+              {% if column == 'remise' %}<td class="c">{{ row.remise if row.remise is not none else '' }}</td>{% endif %}
+              {% if column == 'line_total' %}<td class="r">{{ "%.2f"|format(row.line_total) if row.line_total is not none else '' }}</td>{% endif %}
+            {% endfor %}
+          </tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+      <div class="footer-grid">
+
+    <div class="notes">
+      {% for note in notes %}<div>{{ note }}</div>{% endfor %}
+    </div>
+
+    <table class="totals">
+      <tr><td><strong>{{ supplier_profile.totals_labels[0] }}</strong></td><td class="r">{{ "%.2f"|format(totals.ht) }}</td></tr>
+      <tr><td><strong>{{ supplier_profile.totals_labels[1] }}</strong></td><td class="r">{{ "%.2f"|format(totals.tva) }}</td></tr>
+      <tr><td><strong>{{ supplier_profile.totals_labels[2] }}</strong></td><td class="r"><strong>{{ "%.2f"|format(totals.ttc) }} {{ currency }}</strong></td></tr>
+    </table>
+      </div>
+      <div class="signature">cachet et signature</div>
+    </div>
+  </div>
+</body>
+</html>
+
+<!-- supplier: DANONE NUTRICIA | layout: Ledger | variant: ledger | digest: d32360f1fa -->

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: repeating-linear-gradient(0deg, #f3f3f3, #f3f3f3 8px, #efefef 8px, #efefef 16px);
+    }
+    .page {
+      margin: 30px auto;
+      background: #fff;
+      border: 1px solid #2c2f36;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .supplier {
+      font-size: 12px;
+      line-height: 1.2;
+      border: 1px solid #444;
+      padding: 6px;
+      width: 40%;
+    }
+    .doc {
+      width: 55%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .doc td {
+      border: 1px solid #444;
+      padding: 4px;
+    }
+    .grid {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .grid th, .grid td {
+      border: 1px solid #2f2f2f;
+      padding: 3px;
+    }
+    .grid th {
+      background: #e7ebf3;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .r { text-align: right; }
+    .c { text-align: center; }
+    .designation { width: 39%; }
+    .totals {
+      width: 45%;
+      margin-left: auto;
+      margin-top: 8px;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .totals td {
+      border: 1px solid #2f2f2f;
+      padding: 5px;
+    }
+    .foot {
+      margin-top: 10px;
+      font-size: 10px;
+      color: #222;
+      border-top: 1px dashed #555;
+      padding-top: 6px;
+    }
+    .sig {
+      text-align: right;
+      color: #163d87;
+      font-style: italic;
+      transform: rotate(-5deg);
+    }
+  </style>
+</head>
+<body style="font-family: {{ font_family }};">
+  <div class="page" style="width: {{ canvas_width - 120 }}px; min-height: {{ canvas_height - 90 }}px;">
+    <div class="top" style="transform: translateY({{ header_offset }}px);">
+      <div class="supplier">
+        <strong>{{ supplier.name }}</strong><br>
+        {{ supplier.address }}<br>
+        Tel: {{ supplier.phone }}<br>
+        {{ supplier.city }}
+      </div>
+      <table class="doc">
+        <tr><td><strong>BON DE LIVRAISON</strong></td><td><strong>{{ bl_number }}</strong></td></tr>
+        <tr><td>Date</td><td>{{ issue_date }}</td></tr>
+        <tr><td>Client</td><td>{{ client_name }}</td></tr>
+        <tr><td>Code</td><td>{{ client_code }}</td></tr>
+      </table>
+    </div>
+
+    <table class="grid" style="transform: skewX({{ table_skew }}deg);">
+      <thead>
+        <tr>
+          <th class="designation">Designation</th>
+          {% if include_columns.code_produit %}<th>Code P.</th>{% endif %}
+          <th>Qte</th>
+          <th>P.U HT</th>
+          {% if include_columns.pph %}<th>P.PH</th>{% endif %}
+          {% if include_columns.tva %}<th>TVA</th>{% endif %}
+          <th>Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in products %}
+        <tr style="transform: translateX({{ row.offset_px }}px)">
+          <td {% if row.is_merged_row %}colspan="7"{% endif %}><span>{{ row.designation }}</span></td>
+          {% if not row.is_merged_row %}
+            {% if include_columns.code_produit %}<td class="c">{{ row.code_produit if row.code_produit is not none else '' }}</td>{% endif %}
+            <td class="c">{{ row.qty if row.qty is not none else '' }}</td>
+            <td class="r">{{ "%.2f"|format(row.unit_price) if row.unit_price is not none else '' }}</td>
+            {% if include_columns.pph %}<td class="r">{{ "%.2f"|format(row.pph) if row.pph is not none else '' }}</td>{% endif %}
+            {% if include_columns.tva %}<td class="c">{{ (row.tva * 100)|int if row.tva is not none else '' }}%</td>{% endif %}
+            <td class="r">{{ "%.2f"|format(row.line_total) if row.line_total is not none else '' }}</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <table class="totals">
+      <tr><td>Total HT</td><td class="r">{{ "%.2f"|format(totals.ht) }}</td></tr>
+      <tr><td>TVA</td><td class="r">{{ "%.2f"|format(totals.tva) }}</td></tr>
+      <tr><td><strong>TTC</strong></td><td class="r"><strong>{{ "%.2f"|format(totals.ttc) }} {{ currency }}</strong></td></tr>
+    </table>
+
+    <div class="foot">
+      {% for n in notes %}<div>{{ n }}</div>{% endfor %}
+      <div class="sig" style="display: {% if show_signature %}block{% else %}none{% endif %};">reception confirmee</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { margin: 0; background: #f9f0f0; font-family: Calibri, sans-serif; }
+    .sheet { width: 1121px; min-height: 1600px; margin: 28px auto; background: #fff; border: 1px solid #ab8d8d; box-sizing: border-box; overflow: hidden; }
+    .top { background: linear-gradient(90deg, #7a3d3d, #c46f6f); color: #fff; padding: 14px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .top h1 { margin: 0; font-size: 26px; }
+    .supplier { text-align: right; font-size: 12px; line-height: 1.35; }
+    .meta { padding: 10px 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; border-bottom: 1px solid #ab8d8d; font-size: 12px; }
+    .meta .cell { border: 1px solid #ab8d8d; padding: 6px; min-height: 32px; }
+    .content { padding: 10px 10px 12px 10px; }
+    .doc-table { width: 100%; border-collapse: collapse; font-size: 10.8px; background: #fffdfd; }
+    .doc-table th, .doc-table td { border-bottom: 1px dotted #ab8d8d; padding: 3px 4px; }
+    .doc-table th { background: #f5dddd; text-transform: uppercase; font-size: 10px; }
+    .doc-table tbody tr:nth-child(odd) td { background: #fff7f7; }
+    .merged-row td { background: #f5efef; }
+    .c { text-align: center; }
+    .r { text-align: right; }
+    .footer { margin-top: 10px; border-top: 1px dashed #ab8d8d; padding-top: 8px; }
+    .notes { font-size: 11px; line-height: 1.35; }
+    .totals { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .totals td { border: 1px solid #ab8d8d; padding: 6px; }
+  </style>
+</head>
+<body>
+  <div class="sheet" data-template="generation-sante">
+    <div class="top">
+      <div>
+        <h1>{{ supplier_profile.title }}</h1>
+        <div><strong>BL:</strong> {{ bl_number }}</div>
+      </div>
+      <div class="supplier">
+        <div><strong>{{ supplier.name }}</strong></div>
+        <div>{{ supplier.address }}</div>
+        <div>{{ supplier.phone }}</div>
+        <div>{{ supplier.city }}</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="cell"><strong>Date</strong><br>{{ issue_date }}</div>
+      <div class="cell"><strong>Client</strong><br>{{ client_name }}</div>
+      <div class="cell"><strong>Code</strong><br>{{ client_code }}</div>
+      <div class="cell"><strong>Adresse</strong><br>{{ client_address }}</div>
+    </div>
+    <div class="content">
+
+    <table class="doc-table">
+      <thead>
+        <tr>
+          {% for column in supplier_profile.column_order %}
+            <th>{{ column }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in products %}
+        {% if row.is_merged_row %}
+          <tr class="merged-row">
+            <td colspan="{{ supplier_profile.column_order|length }}"><strong>{{ row.designation }}</strong></td>
+          </tr>
+        {% else %}
+          <tr style="transform: translateX({{ row.offset_px }}px)">
+            {% for column in supplier_profile.column_order %}
+              {% if column == 'designation' %}<td>{{ row.designation }}</td>{% endif %}
+              {% if column == 'code' %}<td class="c">{{ row.code_produit if row.code_produit is not none else '' }}</td>{% endif %}
+              {% if column == 'qty' %}<td class="c">{{ row.qty if row.qty is not none else '' }}</td>{% endif %}
+              {% if column == 'unit_price' %}<td class="r">{{ "%.2f"|format(row.unit_price) if row.unit_price is not none else '' }}</td>{% endif %}
+              {% if column == 'pph' %}<td class="r">{{ "%.2f"|format(row.pph) if row.pph is not none else '' }}</td>{% endif %}
+              {% if column == 'tva' %}<td class="c">{{ (row.tva * 100)|int if row.tva is not none else '' }}%</td>{% endif %}
+              {% if column == 'lot' %}<td class="c">{{ row.lot if row.lot is not none else '' }}</td>{% endif %}
+              {% if column == 'peremption' %}<td class="c">{{ row.peremption if row.peremption is not none else '' }}</td>{% endif %}
+              {% if column == 'remise' %}<td class="c">{{ row.remise if row.remise is not none else '' }}</td>{% endif %}
+              {% if column == 'line_total' %}<td class="r">{{ "%.2f"|format(row.line_total) if row.line_total is not none else '' }}</td>{% endif %}
+            {% endfor %}
+          </tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+      <div class="footer">
+
+    <div class="notes">
+      {% for note in notes %}<div>{{ note }}</div>{% endfor %}
+    </div>
+
+    <table class="totals">
+      <tr><td><strong>{{ supplier_profile.totals_labels[0] }}</strong></td><td class="r">{{ "%.2f"|format(totals.ht) }}</td></tr>
+      <tr><td><strong>{{ supplier_profile.totals_labels[1] }}</strong></td><td class="r">{{ "%.2f"|format(totals.tva) }}</td></tr>
+      <tr><td><strong>{{ supplier_profile.totals_labels[2] }}</strong></td><td class="r"><strong>{{ "%.2f"|format(totals.ttc) }} {{ currency }}</strong></td></tr>
+    </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+<!-- supplier: GENERATION SANTE | layout: Compact | variant: compact | digest: e774f3d8fa -->

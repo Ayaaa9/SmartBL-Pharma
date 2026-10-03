@@ -1,0 +1,14 @@
+/.venv
+
+/dataset_BL/annotations
+/dataset_BL/images
+
+
+/dataset_v1/annotations
+/dataset_v1/images
+
+/output/annotations
+/output/images
+
+
+/__pycache__/
